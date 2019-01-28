@@ -1,0 +1,9 @@
+{
+  "name": "js-concurrency",
+  "repository": "https://github.com/sammynave/js-concurrency",
+  "version": "0.0.0",
+  "description": "general concurrency primitives inspired by (stolen from) ember-concurrency",
+  "main": "index.js",
+  "author": "sammy nave",
+  "license": "MIT"
+}
