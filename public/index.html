@@ -9,15 +9,18 @@
   </head>
 
   <body>
-    <div id="ex-1">
-      <button id="pick-random-numbers">pick random numbers</button>random number: <span id="random-numbers"></span>
-    </div>
-
     <script src="js-concurrency.iife.js"></script>
+
+    <div id="ex-1">
+      <h3>random numbers</h3>
+      <button id="pick-random-numbers"> pick random numbers</button>random number: <span id="random-numbers"></span>
+    </div>
     <script>
+      (function () {
+      // From ember-concurrency.com
       const button = document.getElementById('pick-random-numbers')
       const numbers = document.getElementById('random-numbers')
-      const ex1 = jsc.task(function *() {
+      const ex = jsc.task(function *() {
         let nums = [];
 
         for (let i = 0; i < 3; i++) {
@@ -28,8 +31,32 @@
       });
 
       button.addEventListener('click', function() {
-        ex1.perform();
+        ex.perform();
       });
+    })();
+    </script>
+
+    <h2 style="border-bottom: 8px solid black;"></h2>
+
+    <div id="ex-2">
+      <h3>using `yield` - fetch random name from faker.io</h3>
+      <button id="fetch-name">random name</button> fetch random name: <span id="random-name"></span>
+    </div>
+    <script>
+      (function () {
+        const button = document.getElementById('fetch-name')
+        const nameEl = document.getElementById('random-name')
+        const ex = jsc.task(function *() {
+          const resp = yield fetch('http://faker.hook.io/?property=name.findName&locale=en');
+          const name = yield resp.text();
+
+          nameEl.textContent = name;
+        });
+
+        button.addEventListener('click', function() {
+          ex.perform();
+        });
+      })();
     </script>
   </body>
 </html>

@@ -1,13 +1,21 @@
 const task = (genFn) => {
   return {
     perform() {
-      const gen = genFn();
-      let n = gen.next();
-      while(n.done === false) {
-        n.next();
+      const itr = genFn();
+
+      /*
+       * TODO: might not want to use recursion
+       * benchmark this at some point
+       */
+      const run = (arg) => {
+        let result = itr.next(arg);
+
+        return result.done
+          ? result.value
+          : Promise.resolve(result.value).then(run);
       }
 
-      return n.value;
+      return run();
     }
   }
 }
