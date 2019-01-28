@@ -13,7 +13,7 @@
 
     <div id="ex-1">
       <h3>random numbers</h3>
-      <button id="pick-random-numbers"> pick random numbers</button>random number: <span id="random-numbers"></span>
+      <button id="pick-random-numbers">pick random numbers</button> random number: <span id="random-numbers"></span>
     </div>
     <script>
       (function () {
@@ -40,12 +40,14 @@
 
     <div id="ex-2">
       <h3>using `yield` - fetch random name from faker.io</h3>
+      <div>status: <span id="random-name-status"></span></div>
       <button id="fetch-name">random name</button> fetch random name: <span id="random-name"></span>
     </div>
     <script>
       (function () {
         const button = document.getElementById('fetch-name')
         const nameEl = document.getElementById('random-name')
+        const statusEl = document.getElementById('random-name-status')
         const ex = jsc.task(function *() {
           const resp = yield fetch('http://faker.hook.io/?property=name.findName&locale=en');
           const name = yield resp.text();
@@ -54,7 +56,10 @@
         });
 
         button.addEventListener('click', function() {
-          ex.perform();
+          const task = ex.perform();
+          const unsubscribe = task.subscribe(({ state }) => {
+            statusEl.textContent = state;
+          });
         });
       })();
     </script>
