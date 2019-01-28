@@ -3,7 +3,22 @@
   "repository": "https://github.com/sammynave/js-concurrency",
   "version": "0.0.0",
   "description": "general concurrency primitives inspired by (stolen from) ember-concurrency",
-  "main": "index.js",
+  "module": "dist/js-concurrency.es.js",
+  "browser": "dist/js-concurrency.iife.js",
   "author": "sammy nave",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "rollup": "^1.1.2",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-filesize": "^6.0.1",
+    "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-serve": "^1.0.1",
+    "rollup-plugin-terser": "^4.0.3",
+    "trash-cli": "^1.4.0"
+  },
+  "scripts": {
+    "clean": "trash ./dist",
+    "build": "yarn clean && rollup -c",
+    "dev": "yarn build -w --environment BUILD:dev"
+  }
 }

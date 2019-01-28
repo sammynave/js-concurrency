@@ -1,0 +1,35 @@
+<!doctype html>
+<html class="no-js" lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+
+  <body>
+    <div id="ex-1">
+      <button id="pick-random-numbers">pick random numbers</button>random number: <span id="random-numbers"></span>
+    </div>
+
+    <script src="js-concurrency.iife.js"></script>
+    <script>
+      const button = document.getElementById('pick-random-numbers')
+      const numbers = document.getElementById('random-numbers')
+      const ex1 = jsc.task(function *() {
+        let nums = [];
+
+        for (let i = 0; i < 3; i++) {
+          nums.push(Math.floor(Math.random() * 10));
+        }
+
+        numbers.textContent = nums.join(', ');
+      });
+
+      button.addEventListener('click', function() {
+        ex1.perform();
+      });
+    </script>
+  </body>
+</html>
