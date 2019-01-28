@@ -57,8 +57,19 @@
 
         button.addEventListener('click', function() {
           const task = ex.perform();
-          const unsubscribe = task.subscribe(({ state }) => {
-            statusEl.textContent = state;
+          const unsubscribe = task.subscribe((changed, { state, value }) => {
+            /*
+             * TODO: slightly annoying to push this onto
+             * the user. think of a better way
+             */
+
+            if (changed.state) {
+              statusEl.textContent = state;
+            }
+
+            if (changed.value) {
+              console.log(value);
+            }
           });
         });
       })();

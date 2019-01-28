@@ -8,8 +8,10 @@ const DROPPED  = 'dropped';
 export default class TaskInstance {
   constructor(genFn) {
     this._subscribers = [];
-    this._hasStarted = true;
     this._state = RUNNING;
+    this._isSuccessful = null;
+    this._value = null;
+    this._hasStarted = true;
 
     const itr = genFn();
 
@@ -37,13 +39,16 @@ export default class TaskInstance {
     return this;
   }
 
-  emitChange() {
-    this._subscribers.forEach(s => s(this));
+  emitChange(changedKeys) {
+    const changed = {};
+    changedKeys.forEach(c => changed[c] = 1);
+
+    this._subscribers.forEach(s => s(changed, this));
   }
 
   subscribe(subscriber) {
     this._subscribers.push(subscriber);
-    subscriber(this);
+    subscriber({ state: 1 }, this);
 
     const unsubscribe = function() {
       const index = subscribers.indexOf(subscriber);
@@ -88,7 +93,7 @@ export default class TaskInstance {
   set isSuccessful(tf) {
     this._isSuccessful = tf;
     this._isFinished = true;
-    this.emitChange();
+    this.emitChange(['state']);
   }
 
 
@@ -97,8 +102,12 @@ export default class TaskInstance {
   }
 
   set hasStarted(tf) {
+    if (this._hasStarted === tf) {
+      return;
+    }
+
     this._hasStarted = tf;
-    this.emitChange();
+    this.emitChange(['state']);
   }
 
 
@@ -108,7 +117,7 @@ export default class TaskInstance {
 
   set value(v) {
     this._value = v;
-    this.emitChange();
+    this.emitChange(['value']);
   }
 
 
