@@ -4,7 +4,6 @@ const FINISHED = 'finished';
 const CANCELED = 'canceled';
 const DROPPED  = 'dropped';
 
-
 export default class TaskInstance {
   constructor(genFn) {
     this._subscribers = [];
@@ -19,23 +18,23 @@ export default class TaskInstance {
      * TODO: might not want to use recursion
      * benchmark this at some point
      */
-    const run = (arg) => {
-      let result = itr.next(arg);
-
-      /*
-       * TODO: handle errors
-       * https://www.promisejs.org/generators/#both
-       */
+    const run = (result) => {
       if (result.done) {
         this.isSuccessful = true;
-        return result.value;
-      } else {
-        return Promise.resolve(result.value).then(run);
+        return Promise.resolve(result.value);
       }
+
+      return Promise.resolve(result.value)
+        .then(
+          (res) => run(itr.next(res)),
+          (err) => {
+            this.error = err;
+            itr.throw(this);
+          }
+        );
     }
 
-    this.value = run();
-
+    this.value = run(itr.next());
     return this;
   }
 
@@ -65,6 +64,18 @@ export default class TaskInstance {
 
     return unsubscribe;
   }
+
+  get error() {
+    return this._error;
+  }
+
+  set error(e) {
+    this._isSuccessful = false;
+    this._isFinished = true;
+    this._error = e;
+    this.emitChange(['state', 'error']);
+  }
+
 
   get state() {
     if (this.isDropped) {

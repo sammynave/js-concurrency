@@ -18,8 +18,8 @@
     <script>
       (function () {
       // From ember-concurrency.com
-      const button = document.getElementById('pick-random-numbers')
-      const numbers = document.getElementById('random-numbers')
+      const button = document.getElementById('pick-random-numbers');
+      const numbers = document.getElementById('random-numbers');
       const ex = jsc.task(function *() {
         let nums = [];
 
@@ -41,13 +41,20 @@
     <div id="ex-2">
       <h3>using `yield` - fetch random name from faker.io</h3>
       <div>status: <span id="random-name-status"></span></div>
-      <button id="fetch-name">random name</button> fetch random name: <span id="random-name"></span>
+      <div>
+        <button id="fetch-name">random name</button> fetch random name: <span id="random-name"></span>
+      </div>
+      <div>
+        <button id="err-fetch-name">throw error</button> fetch random name: <span id="err-random-name"></span>
+      </div>
     </div>
     <script>
       (function () {
-        const button = document.getElementById('fetch-name')
-        const nameEl = document.getElementById('random-name')
-        const statusEl = document.getElementById('random-name-status')
+        const button = document.getElementById('fetch-name');
+        const errButton = document.getElementById('err-fetch-name');
+        const nameEl = document.getElementById('random-name');
+        const errNameEl = document.getElementById('err-random-name');
+        const statusEl = document.getElementById('random-name-status');
         const ex = jsc.task(function *() {
           const resp = yield fetch('http://faker.hook.io/?property=name.findName&locale=en');
           const name = yield resp.text();
@@ -72,6 +79,38 @@
             }
           });
         });
+
+        /*
+         * Error example
+         */
+        const errEx = jsc.task(function *() {
+          try {
+            const resp = yield fetch('http://somebadurlthatdoesntexist');
+            const name = yield resp.text();
+
+            errNameEl.textContent = name;
+          } catch (e) {
+            errNameEl.textContent = e.error;
+          }
+        });
+
+        errButton.addEventListener('click', function() {
+          const task = errEx.perform();
+          const unsubscribe = task.subscribe((changed, { state, value, error }) => {
+            if (changed.state) {
+              statusEl.textContent = state;
+            }
+
+            if (changed.value) {
+              console.log(value);
+            }
+
+            if (changed.error) {
+              console.error(`caught error from task and here it is: ${error}`);
+            }
+          });
+        });
+
       })();
     </script>
   </body>
