@@ -17,8 +17,9 @@
     "trash-cli": "^1.4.0"
   },
   "scripts": {
-    "clean": "trash ./dist",
     "build": "yarn clean && rollup -c",
-    "dev": "yarn build -w --environment BUILD:dev"
+    "clean": "trash ./dist",
+    "dev": "yarn build -w --environment BUILD:dev",
+    "test": "echo 'no tests yet'"
   }
 }
