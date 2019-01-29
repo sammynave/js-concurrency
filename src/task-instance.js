@@ -5,12 +5,17 @@ const CANCELED = 'canceled';
 const DROPPED  = 'dropped';
 
 export default class TaskInstance {
-  constructor(genFn) {
+  constructor(genFn, { immediatelyCancel = false } = {}) {
     this._subscribers = [];
     this._state = RUNNING;
     this._isSuccessful = null;
     this._value = null;
     this._hasStarted = true;
+
+    if (immediatelyCancel) {
+      this.isDropped = true;
+      return this;
+    }
 
     const itr = genFn();
 
@@ -76,7 +81,13 @@ export default class TaskInstance {
     this.emitChange(['state', 'error']);
   }
 
-
+  /*
+   * TODO:
+   * probably want this to be a state machine and make sure
+   * these are mutually exclusive.
+   * microstates (https://github.com/microstates/microstates.js)
+   * would be nice for this lib but it would quintuple the size
+   */
   get state() {
     if (this.isDropped) {
       return DROPPED;
@@ -132,14 +143,23 @@ export default class TaskInstance {
   }
 
 
-
-  /*
-   * TODO: these are not implemented yet
-   */
   get isDropped() {
     return this._isDropped;
   }
 
+  set isDropped(tf) {
+    if (this._isDropped === tf) {
+      return;
+    }
+
+    this._isDropped = tf;
+    this.emitChange(['state']);
+  }
+
+
+  /*
+   * TODO: these are not implemented yet
+   */
   get isCanceling() {
     return this._isCanceling;
   }
