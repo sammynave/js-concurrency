@@ -26,6 +26,7 @@ export default class TaskInstance {
     const run = (result) => {
       if (result.done) {
         this.isSuccessful = true;
+        this.value = result.value;
         return Promise.resolve(result.value);
       }
 
@@ -39,14 +40,14 @@ export default class TaskInstance {
         );
     }
 
-    this.value = run(itr.next());
+    run(itr.next());
+
     return this;
   }
 
   emitChange(changedKeys) {
     const changed = {};
     changedKeys.forEach(c => changed[c] = 1);
-
     this._subscribers.forEach(s => s(changed, this));
   }
 

@@ -1,0 +1,37 @@
+<h3>random numbers</h3>
+
+<div>{performCount}</div>
+
+<button on:click="click()">
+  pick random numbers
+</button>
+
+<span>random number: {result}</span>
+
+<script>
+  import { task } from '../../src/index';
+
+  export default {
+    methods: {
+      click() {
+        const { random } = this.get();
+        random.perform();
+        this.set({ performCount: random.performCount });
+      }
+    },
+
+    oncreate() {
+      const ctx = this;
+      const random = task(function *() {
+        let nums = [];
+
+        for (let i = 0; i < 3; i++) {
+          nums.push(Math.floor(Math.random() * 10));
+        }
+
+        ctx.set({ result: nums.join(', ') });
+      });
+      this.set({ random, performCount: random.performCount });
+    }
+  }
+</script>

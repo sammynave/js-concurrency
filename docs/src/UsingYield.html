@@ -1,0 +1,114 @@
+<style>
+  .state-list {
+    max-width: 200px;
+    word-wrap: break-word;
+  }
+
+  .state {
+    padding: .25em;
+    font-size: .75rem;
+    display: inline-block;
+  }
+</style>
+
+<h3>using `yield` - fetch random name from faker.io</h3>
+<h4>maxConcurrency = 1; drop = true;</h4>
+
+<div>
+  <div>count: {performCount}</div>
+  <div>task instance status: {taskInstanceState}</div>
+  <div>task status: {taskState}</div>
+  <div>
+    <button on:click="click()">random name</button> fetch random name: {name}
+  </div>
+  <div>
+    <button on:click="click(true)">throw error</button> {error}
+  </div>
+</div>
+
+<div class="state-list">
+  <h4>taskStates</h4>
+  {#each taskStates as state}
+    <span class="state">{state}</span>
+  {/each}
+</div>
+
+<div class="state-list">
+  <h4>taskInstanceStates</h4>
+  {#each taskInstanceStates as state}
+    <span class="state">{state}</span>
+  {/each}
+</div>
+
+<script>
+  import { task } from '../../src/index';
+
+  export default {
+    methods: {
+      click(err) {
+        const { nameTask } = this.get();
+        this.set({ throwError: err });
+        const getRandomName = nameTask.perform();
+
+        const unsubscribeTask = getRandomName.subscribe((changed, { state, value }) => {
+            /*
+             * TODO: slightly annoying to push this onto
+             * the user. think of a better way
+             */
+            if (changed.state) {
+              const taskInstanceStates = this.get().taskInstanceStates;
+              this.set({
+                taskInstanceState: state,
+                taskInstanceStates: taskInstanceStates.concat([state])
+              });
+            }
+
+            if (changed.value) {
+              console.log(value);
+            }
+        });
+
+
+        this.set({ performCount: nameTask.performCount });
+      }
+    },
+
+    data() {
+      return {
+        taskStates: [],
+        taskInstanceStates: []
+      }
+    },
+
+    oncreate() {
+      const ctx = this;
+      const nameTask = task(function *() {
+        if (ctx.get().throwError) {
+          try {
+            const resp = yield fetch('http://somebadurlthatdoesntexist');
+          } catch (e) {
+            ctx.set({ error: e.error });
+          }
+        } else {
+
+          const resp = yield fetch('http://faker.hook.io/?property=name.findName&locale=en');
+          const name = yield resp.text();
+
+          ctx.set({ name });
+        }
+      });
+
+      const nameTaskUnsubscribe = nameTask.subscribe((changed, { state }) => {
+        if (changed.state) {
+          const taskStates = this.get().taskStates;
+          this.set({
+            taskState: state,
+            taskStates: taskStates.concat([state])
+          });
+        }
+      });
+
+      this.set({ nameTask, performCount: nameTask.performCount });
+    }
+  }
+</script>

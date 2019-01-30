@@ -4,6 +4,7 @@ import resolve from "rollup-plugin-node-resolve";
 import commonjs from 'rollup-plugin-commonjs';
 import serve from 'rollup-plugin-serve'
 import { terser } from "rollup-plugin-terser";
+import svelte from 'rollup-plugin-svelte';
 
 const isDev = process.env.BUILD === 'dev';
 const commonjsPlugin = commonjs();
@@ -16,8 +17,34 @@ const resolvePlugin = resolve({
 
 const servePlugin = serve({
   open: true,
-  contentBase: ['dist', 'public']
+  contentBase: ['docs/src', 'docs/public']
 });
+
+const sveltePlugin = svelte({
+  skipIntroByDefault: true,
+  nestedTransitions: true,
+  emitCss: false,
+  css(css) {
+    css.write('docs/public/main.css');
+  }
+});
+
+const defaultPlugins = [
+  resolvePlugin,
+  commonjsPlugin,
+  terser(),
+  filesizePlugin
+];
+
+const cjs = {
+  input: "src/index.js",
+  output: {
+    file: pkg.module,
+    format: "cjs",
+    sourcemap: false
+  },
+  plugins: defaultPlugins
+};
 
 const es = {
   input: "src/index.js",
@@ -26,13 +53,7 @@ const es = {
     format: "es",
     sourcemap: true
   },
-  plugins: [
-    resolvePlugin,
-    commonjsPlugin,
-    terser(),
-    filesizePlugin,
-    isDev ? servePlugin : {}
-  ]
+  plugins: defaultPlugins
 };
 
 const iife = {
@@ -43,13 +64,26 @@ const iife = {
     sourcemap: true,
     name: 'jsc'
   },
+  plugins: defaultPlugins
+};
+
+const docs = {
+  input: "docs/main.js",
+  output: {
+    file: 'docs/public/js-concurrency-docs.js',
+    format: "umd",
+    sourcemap: true,
+    name: 'jsc'
+  },
   plugins: [
+    sveltePlugin,
     resolvePlugin,
     commonjsPlugin,
-    isDev ? {} : terser(),
     filesizePlugin,
     isDev ? servePlugin : {}
   ]
 };
 
-export default [es, iife];
+const exports = isDev ? [docs] : [es, iife, cjs, docs];
+
+export default exports;

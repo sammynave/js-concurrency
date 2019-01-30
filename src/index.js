@@ -4,6 +4,12 @@ const IDLE    = 'idle';
 const RUNNING = 'running';
 const QUEUED  = 'queued';
 
+
+/*
+ * TODO
+ * make a `Task` class and move this stuff there
+ * or convert to a functional style.
+ */
 const task = (genFn, { drop = true, maxConcurrency = 1 } = {}) => {
   let subscribers = [];
   return {

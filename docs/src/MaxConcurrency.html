@@ -1,0 +1,112 @@
+<style>
+  .state-list {
+    max-width: 200px;
+    word-wrap: break-word;
+  }
+
+  .state {
+    padding: .25em;
+    font-size: .75rem;
+    display: inline-block;
+  }
+
+  .green {
+    color: green;
+  }
+
+  .blue {
+    color: blue;
+  }
+</style>
+
+<h3>maxConcurrency = 3</h3>
+
+<div>performCount: {performCount}</div>
+<div>droppedCount: {droppedCount}</div>
+<div>concurrency: {concurrency}</div>
+
+<button on:click="click()">
+  pick random numbers
+</button>
+
+<span>random number: {result}</span>
+
+<div class="state-list">
+  <h4>task results</h4>
+  {#each states as state}
+    <span class="state {state.color}">{state.value}</span>
+  {/each}
+</div>
+
+<script>
+  import { task } from '../../src/index';
+
+  export default {
+    methods: {
+      click() {
+        const { random, performCount } = this.get();
+        const color = (performCount & 1) ? 'green' : 'blue';
+        this.set({ color });
+        const instance = random.perform();
+
+        instance.subscribe((changed, { state, value }) => {
+          const { states } = this.get();
+
+          if (changed.value) {
+            this.set({ states: states.concat([{ value, color }]) });
+          }
+
+          if (state === 'dropped' || state === 'running') {
+            this.set({ states: states.concat([{ value: state, color }]) });
+          }
+        });
+
+        this.set({
+          performCount: random.performCount,
+          droppedCount: random.droppedCount
+        });
+      }
+    },
+
+    data() {
+      return {
+        states: []
+      };
+    },
+
+    oncreate() {
+      const ctx = this;
+      const random = task(function *() {
+        let nums = [];
+
+        for (let i = 0; i < 3; i++) {
+          nums.push(Math.floor(Math.random() * 10));
+        }
+
+        // Fake waiting
+        yield new Promise((resolve) => {
+          setTimeout(resolve, 2000);
+        });
+
+        ctx.set({
+          result: nums.join(', ')
+        });
+
+        return nums.join(', ');
+      }, { maxConcurrency: 3 });
+
+      random.subscribe((changed, { concurrency }) => {
+        this.set({
+          concurrency: random.concurrency,
+        });
+      });
+
+      this.set({
+        random,
+        concurrency: random.concurrency,
+        performCount: random.performCount,
+        droppedCount: random.droppedCount
+      });
+    }
+  }
+</script>

@@ -3,7 +3,7 @@
   "repository": "https://github.com/sammynave/js-concurrency",
   "version": "0.0.2",
   "description": "general concurrency primitives inspired by (stolen from) ember-concurrency",
-  "main": "dist/js-concurrency.es.js",
+  "main": "dist/js-concurrency.cjs.js",
   "module": "dist/js-concurrency.es.js",
   "browser": "dist/js-concurrency.iife.js",
   "author": "sammy nave",
@@ -14,7 +14,9 @@
     "rollup-plugin-filesize": "^6.0.1",
     "rollup-plugin-node-resolve": "^4.0.0",
     "rollup-plugin-serve": "^1.0.1",
+    "rollup-plugin-svelte": "^5.0.1",
     "rollup-plugin-terser": "^4.0.3",
+    "svelte": "^2.16.0",
     "trash-cli": "^1.4.0"
   },
   "scripts": {
