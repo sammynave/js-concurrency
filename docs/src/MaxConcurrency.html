@@ -24,10 +24,16 @@
 <div>performCount: {performCount}</div>
 <div>droppedCount: {droppedCount}</div>
 <div>concurrency: {concurrency}</div>
+<div>instances: {taskInstances}</div>
 
 <button on:click="click()">
   pick random numbers
 </button>
+{#if taskInstances}
+<button on:click="cancelAll()">
+  cancel all
+</button>
+{/if}
 
 <span>random number: {result}</span>
 
@@ -43,6 +49,11 @@
 
   export default {
     methods: {
+      cancelAll() {
+        const { random } = this.get();
+        random.cancelAll();
+      },
+
       click() {
         const { random, performCount } = this.get();
         const color = (performCount & 1) ? 'green' : 'blue';
@@ -77,6 +88,7 @@
     oncreate() {
       const ctx = this;
       const random = task(function *() {
+        try {
         let nums = [];
 
         for (let i = 0; i < 3; i++) {
@@ -93,11 +105,15 @@
         });
 
         return nums.join(', ');
+        } catch (e) {
+          console.log(e);
+        }
       }, { maxConcurrency: 3 });
 
-      random.subscribe((changed, { concurrency }) => {
+      random.subscribe((changed, { concurrency, taskInstances }) => {
         this.set({
           concurrency: random.concurrency,
+          taskInstances: random.taskInstances.size
         });
       });
 

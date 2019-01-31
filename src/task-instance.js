@@ -4,18 +4,17 @@ const FINISHED = 'finished';
 const CANCELED = 'canceled';
 const DROPPED  = 'dropped';
 
-export default class TaskInstance {
-  constructor(genFn, { immediatelyCancel = false } = {}) {
+const YIELDABLE_CANCEL = 'cancel';
+
+class TaskInstance {
+  constructor(genFn) {
     this._subscribers = [];
     this._state = RUNNING;
     this._isSuccessful = null;
     this._value = null;
     this._hasStarted = true;
-
-    if (immediatelyCancel) {
-      this.isDropped = true;
-      return this;
-    }
+    this._isCanceling = false;
+    this._cancelReason = null;
 
     const itr = genFn();
 
@@ -32,10 +31,17 @@ export default class TaskInstance {
 
       return Promise.resolve(result.value)
         .then(
-          (res) => run(itr.next(res)),
+          (res) => {
+            if (this.value instanceof Error) {
+              this._isFinished = true;
+              return itr.throw(this);
+            };
+
+            return run(itr.next(res))
+          },
           (err) => {
             this.error = err;
-            itr.throw(this);
+            return itr.throw(this);
           }
         );
     }
@@ -49,6 +55,28 @@ export default class TaskInstance {
     const changed = {};
     changedKeys.forEach(c => changed[c] = 1);
     this._subscribers.forEach(s => s(changed, this));
+  }
+
+  cancel(cancelReason = 'TODO add a reason for cancellation') {
+    if (this.isCanceling || this.isFinished) { return; }
+
+    /*
+     * Batch changes
+     */
+
+    if (cancelReason === DROPPED) {
+      this._isDropped = true;
+    }
+
+    this._isCanceling = true;
+
+    /*
+     * TODO: get actual reasons
+     */
+    this._cancelReason = cancelReason;
+
+    this._value = new Error(this.cancelReason);
+    this.emitChange(['state', 'value', 'cancelReason']);
   }
 
   subscribe(subscriber) {
@@ -157,11 +185,25 @@ export default class TaskInstance {
     this.emitChange(['state']);
   }
 
+  get isCanceled() {
+    return this.isCanceling && this.isFinished;
+  }
 
-  /*
-   * TODO: these are not implemented yet
-   */
   get isCanceling() {
     return this._isCanceling;
   }
+
+  set isCanceling(tf) {
+    this._isCanceling = tf;
+    this.emitChange(['state']);
+  }
+
+
+  get cancelReason() {
+    return this._cancelReason;
+  }
 }
+
+export {
+  TaskInstance
+};

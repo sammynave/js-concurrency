@@ -1,0 +1,131 @@
+<style>
+  .state-list {
+    max-width: 200px;
+    word-wrap: break-word;
+  }
+
+  .state {
+    padding: .25em;
+    font-size: .75rem;
+    display: inline-block;
+  }
+
+  .green {
+    color: green;
+  }
+
+  .red {
+    color: red;
+  }
+</style>
+
+<h3>Canceling</h3>
+
+<div>performCount: {performCount}</div>
+
+<button on:click="click()">
+  pick random numbers
+</button>
+{#if instance}
+<button on:click="cancel()">
+  cancel
+</button>
+{/if}
+
+<span>random number: {result}</span>
+
+<div class="state-list">
+  <h4>task results</h4>
+  {#each states as state}
+    <span class="state {state.color}">{state.value}</span>
+  {/each}
+</div>
+
+<script>
+  import { task } from '../../src/index';
+
+  export default {
+    methods: {
+      cancel() {
+        const { instance } = this.get();
+        instance.cancel();
+      },
+
+      click() {
+        const { random, performCount } = this.get();
+        const instance = random.perform();
+        this.set({ instance });
+
+        instance.subscribe((changed, { state, value }) => {
+          const { states } = this.get();
+
+          if (changed.state) {
+            if (state === 'canceled') {
+              return this.set({
+                states: states.concat([{ value: state, color: 'red' }]),
+                instance: null
+              });
+            }
+
+            if (state === 'finished') {
+              return this.set({
+                states: states.concat([{ value: state, color: 'green' }]),
+                instance: null
+              });
+            }
+
+            if (state === 'running') {
+              return this.set({ states: states.concat([{ value: state, color: 'green' }]) });
+            }
+          }
+
+
+        });
+
+        this.set({
+          performCount: random.performCount
+        });
+      }
+    },
+
+    data() {
+      return {
+        states: []
+      };
+    },
+
+    oncreate() {
+      const ctx = this;
+      const random = task(function *() {
+        try {
+          let nums = [];
+
+          for (let i = 0; i < 3; i++) {
+            nums.push(Math.floor(Math.random() * 10));
+          }
+
+          // Fake waiting
+          yield new Promise((resolve) => {
+            setTimeout(resolve, 2000);
+          });
+
+          ctx.set({
+            result: nums.join(', ')
+          });
+
+          return nums.join(', ');
+        } catch (e) {
+          ctx.set({
+            result: e.cancelReason
+          });
+        }
+      });
+
+
+      this.set({
+        random,
+        performCount: random.performCount
+      });
+    }
+  }
+</script>
