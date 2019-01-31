@@ -40,8 +40,7 @@ const cjs = {
   input: "src/index.js",
   output: {
     file: pkg.module,
-    format: "cjs",
-    sourcemap: false
+    format: "cjs"
   },
   plugins: defaultPlugins
 };
