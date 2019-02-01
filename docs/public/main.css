@@ -1,5 +1,8 @@
+.page.svelte-28cnyk{display:grid;grid-template-areas:"title title"
+      "nav main";grid-template-columns:1fr 4fr}.title.svelte-28cnyk{grid-area:title}.main.svelte-28cnyk{grid-area:main;padding:0 1em}
 .state-list.svelte-1ljunyb{max-width:200px;word-wrap:break-word}.state.svelte-1ljunyb{padding:.25em;font-size:.75rem;display:inline-block}
 .state-list.svelte-9usqt5{max-width:200px;word-wrap:break-word}.state.svelte-9usqt5{padding:.25em;font-size:.75rem;display:inline-block}.green.svelte-9usqt5{color:green}.blue.svelte-9usqt5{color:blue}
 .state-list.svelte-nzn9qb{max-width:200px;word-wrap:break-word}.state.svelte-nzn9qb{padding:.25em;font-size:.75rem;display:inline-block}.green.svelte-nzn9qb{color:green}.red.svelte-nzn9qb{color:red}
+.nav.svelte-ir5yr4{grid-area:nav}.link.svelte-ir5yr4{padding:.25em;cursor:pointer}.active.svelte-ir5yr4,.link.svelte-ir5yr4:hover{text-decoration:underline}
 
 /*# sourceMappingURL=main.css.map */

@@ -1,0 +1,23 @@
+<div class="nav">
+  {#each pages as page}
+    <div class="link {active === page.component ? 'active' : ''}" on:click="fire('change', page.component)">
+      {page.title}
+    </div>
+  {/each}
+</div>
+
+<style>
+  .nav {
+    grid-area: nav;
+  }
+
+  .link {
+    padding: .25em;
+    cursor: pointer;
+  }
+
+  .active,
+  .link:hover {
+    text-decoration: underline;
+  }
+</style>

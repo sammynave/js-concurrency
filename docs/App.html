@@ -1,25 +1,70 @@
-<h1>js-concurrency</h1>
+<div class="page">
+  <h1 class="title">js-concurrency</h1>
 
-<BasicExample />
+  <Nav on:change="setActive(event)" {active} {pages} />
 
-<UsingYield />
+  <div class="main">
+    <svelte:component this={active} />
+  </div>
+</div>
 
-<MaxConcurrency />
+<style>
+  .page {
+    display: grid;
+    grid-template-areas:
+      "title title"
+      "nav main";
+    grid-template-columns: 1fr 4fr;
 
-<Cancel />
+  }
+
+  .title {
+    grid-area: title;
+  }
+
+  .main {
+    grid-area: main;
+    padding: 0 1em;
+  }
+</style>
+
 
 <script>
   import BasicExample from './src/BasicExample.html';
   import UsingYield from './src/UsingYield.html';
   import MaxConcurrency from './src/MaxConcurrency.html';
   import Cancel from './src/Cancel.html';
+  import Nav from './src/Nav.html';
 
   export default {
     components: {
       BasicExample,
       UsingYield,
       MaxConcurrency,
-      Cancel
+      Cancel,
+      Nav
+    },
+
+    methods: {
+      setActive(active) {
+        this.set({ active });
+      }
+    },
+
+    data() {
+      return {
+        active: BasicExample,
+        BasicExample,
+        UsingYield,
+        MaxConcurrency,
+        Cancel,
+        pages: [
+          { component: BasicExample, title: 'Basic example' },
+          { component: UsingYield, title: 'Using Yield' },
+          { component: MaxConcurrency, title: 'Max concurrency' },
+          { component: Cancel, title: 'Canceling' },
+        ]
+      }
     }
   }
 </script>
