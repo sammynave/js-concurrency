@@ -46,6 +46,17 @@ const es = {
   plugins: defaultPlugins
 };
 
+const umd = {
+  input: "src/index.js",
+  output: {
+    file: pkg.main,
+    format: "umd",
+    sourcemap: true,
+    name: 'jsc'
+  },
+  plugins: defaultPlugins
+};
+
 const iife = {
   input: "src/index.js",
   output: {
@@ -74,6 +85,6 @@ const docs = {
   ]
 };
 
-const exports = isDev ? [docs] : [es, iife, docs];
+const exports = isDev ? [docs] : [es, iife, umd, docs];
 
 export default exports;
