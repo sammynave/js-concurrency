@@ -42,7 +42,7 @@
 </div>
 
 <script>
-  import { task } from '../../src/index';
+  import { task, timeout } from '../../src/index';
 
   export default {
     methods: {
@@ -53,10 +53,7 @@
 
       click() {
         const { random, performCount } = this.get();
-        const instance = random.perform();
-        this.set({ instance });
-
-        instance.subscribe((changed, { state, value }) => {
+        const subscribe = (changed, { state, value }) => {
           const { states } = this.get();
 
           if (changed.state) {
@@ -78,9 +75,11 @@
               return this.set({ states: states.concat([{ value: state, color: 'green' }]) });
             }
           }
+        };
 
+        const instance = random.perform(subscribe);
+        this.set({ instance });
 
-        });
 
         this.set({
           performCount: random.performCount
@@ -105,9 +104,7 @@
           }
 
           // Fake waiting
-          yield new Promise((resolve) => {
-            setTimeout(resolve, 2000);
-          });
+          yield timeout(2000);
 
           ctx.set({
             result: nums.join(', ')

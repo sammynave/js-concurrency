@@ -58,9 +58,8 @@
         const { random, performCount } = this.get();
         const color = (performCount & 1) ? 'green' : 'blue';
         this.set({ color });
-        const instance = random.perform();
 
-        instance.subscribe((changed, { state, value }) => {
+        const subscribe = (changed, { state, value }) => {
           const { states } = this.get();
 
           if (changed.value) {
@@ -70,7 +69,9 @@
           if (state === 'dropped' || state === 'running') {
             this.set({ states: states.concat([{ value: state, color }]) });
           }
-        });
+        };
+
+        const instance = random.perform(subscribe);
 
         this.set({
           performCount: random.performCount,
@@ -89,22 +90,22 @@
       const ctx = this;
       const random = task(function *() {
         try {
-        let nums = [];
+          let nums = [];
 
-        for (let i = 0; i < 3; i++) {
-          nums.push(Math.floor(Math.random() * 10));
-        }
+          for (let i = 0; i < 3; i++) {
+            nums.push(Math.floor(Math.random() * 10));
+          }
 
-        // Fake waiting
-        yield new Promise((resolve) => {
-          setTimeout(resolve, 2000);
-        });
+          // Fake waiting
+          yield new Promise((resolve) => {
+            setTimeout(resolve, 2000);
+          });
 
-        ctx.set({
-          result: nums.join(', ')
-        });
+          ctx.set({
+            result: nums.join(', ')
+          });
 
-        return nums.join(', ');
+          return nums.join(', ');
         } catch (e) {
           console.log(e);
         }

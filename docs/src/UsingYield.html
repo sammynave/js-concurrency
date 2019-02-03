@@ -48,9 +48,7 @@
       click(err) {
         const { nameTask } = this.get();
         this.set({ throwError: err });
-        const getRandomName = nameTask.perform();
-
-        const unsubscribeTask = getRandomName.subscribe((changed, { state, value }) => {
+        const subscribe = (changed, { state, value }) => {
             /*
              * TODO: slightly annoying to push this onto
              * the user. think of a better way
@@ -64,12 +62,15 @@
             }
 
             if (changed.value) {
-              console.log(value);
+              this.set({ name: value });
             }
+        };
+
+        const getRandomName = nameTask.perform(subscribe);
+
+        this.set({
+          performCount: nameTask.performCount
         });
-
-
-        this.set({ performCount: nameTask.performCount });
       }
     },
 
@@ -94,7 +95,7 @@
           const resp = yield fetch('http://faker.hook.io/?property=name.findName&locale=en');
           const name = yield resp.text();
 
-          ctx.set({ name });
+          return name;
         }
       });
 

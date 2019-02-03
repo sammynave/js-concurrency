@@ -52,8 +52,9 @@ class Task {
     });
   }
 
-  perform() {
-    const taskInstance = new TaskInstance(this.genFn);
+  perform(subscribe) {
+    const taskInstance = new TaskInstance(this.genFn);  taskInstance.subscribe(subscribe);
+    taskInstance.run();
     this.taskInstances.add(taskInstance);
 
     if (this.concurrency >= this.maxConcurrency) {

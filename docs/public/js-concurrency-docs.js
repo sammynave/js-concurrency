@@ -198,6 +198,33 @@
 		_differs
 	};
 
+	function defer(label) {
+	  let deferred = { resolve: undefined, reject: undefined };
+
+	  deferred.promise = new Promise((resolve, reject) => {
+	    deferred.resolve = resolve;
+	    deferred.reject = reject;
+	  }, label);
+
+	  return deferred;
+	}
+
+	const timeout = (ms) => {
+	  let timerId;
+
+	  let promise = new Promise((resolve) => {
+	    timerId = setTimeout(() => {
+	      resolve();
+	    }, ms);
+	  });
+
+	  promise.cancel = () => {
+	    clearTimeout(timerId);
+	  };
+
+	  return promise;
+	};
+
 	const RUNNING  = 'running';
 	const WAITING  = 'waiting';
 	const FINISHED = 'finished';
@@ -213,37 +240,39 @@
 	    this._hasStarted = true;
 	    this._isCanceling = false;
 	    this._cancelReason = null;
+	    this.itrResult = null;
+	    this.itr = genFn();
 
-	    const itr = genFn();
+	    this.run = (res) => {
+	      /*
+	       * `result` { value: Promise | T, value: bool }
+	       */
+	      this.itrResult = this.itr.next(res);
 
-	    /*
-	     * TODO: might not want to use recursion
-	     * benchmark this at some point
-	     */
-	    const run = (result) => {
-	      if (result.done) {
+
+	      if (this.itrResult.done) {
+	        this.value = this.itrResult.value;
 	        this.isSuccessful = true;
-	        this.value = result.value;
-	        return Promise.resolve(result.value);
+	        return Promise.resolve(this.itrResult.value);
 	      }
 
-	      return Promise.resolve(result.value)
-	        .then(
-	          (res) => {
-	            if (this.value instanceof Error) {
-	              this._isFinished = true;
-	              return itr.throw(this);
-	            }
-	            return run(itr.next(res))
-	          },
-	          (err) => {
-	            this.error = err;
-	            return itr.throw(this);
-	          }
-	        );
-	    };
+	      this.deferred = defer();
+	      this.deferred.promise.then(
+	        (res) => {
+	          if (this.isCanceled) { return; }
+	          return this.run(res);
+	        },
 
-	    run(itr.next());
+	        (err) => {
+	          this.error = err;
+	          return this.itr.throw(this);
+	        }
+	      );
+
+	      this.deferred.resolve(this.itrResult.value);
+
+	      return this.deferred;
+	    };
 
 	    return this;
 	  }
@@ -251,14 +280,16 @@
 	  emitChange(changedKeys) {
 	    const changed = {};
 	    changedKeys.forEach(c => changed[c] = 1);
-	    this._subscribers.forEach(s => s(changed, this));
+	    this._subscribers.forEach(s => {
+	      s(changed, this);
+	    });
 	  }
 
 	  cancel(cancelReason = 'TODO add a reason for cancellation') {
 	    if (this.isCanceling || this.isFinished) { return; }
 
 	    /*
-	     * Batch changes
+	     * Batch changes by using _<prop>
 	     */
 
 	    if (cancelReason === DROPPED) {
@@ -271,8 +302,18 @@
 	     * TODO: get actual reasons
 	     */
 	    this._cancelReason = cancelReason;
+	    this._isFinished = true;
+	    this._value = Error(this.cancelReason);
 
-	    this._value = new Error(this.cancelReason);
+	    /*
+	     * If this is cancel aware promise (e.g. `timeout`), then
+	     * cancel and clean that up
+	     */
+	    if (typeof this.itrResult.value.cancel === 'function') {
+	      this.itrResult.value.cancel();
+	    }
+
+	    this.deferred.reject(this.itr.throw(this));
 	    this.emitChange(['state', 'value', 'cancelReason']);
 	  }
 
@@ -341,7 +382,7 @@
 	  set isSuccessful(tf) {
 	    this._isSuccessful = tf;
 	    this._isFinished = true;
-	    this.emitChange(['state']);
+	    this.emitChange(['state', 'value']);
 	  }
 
 
@@ -380,6 +421,10 @@
 
 	    this._isDropped = tf;
 	    this.emitChange(['state']);
+	  }
+
+	  get isRunning() {
+	    return !this.isFinished;
 	  }
 
 	  get isCanceled() {
@@ -453,8 +498,9 @@
 	    });
 	  }
 
-	  perform() {
-	    const taskInstance = new TaskInstance(this.genFn);
+	  perform(subscribe) {
+	    const taskInstance = new TaskInstance(this.genFn);  taskInstance.subscribe(subscribe);
+	    taskInstance.run();
 	    this.taskInstances.add(taskInstance);
 
 	    if (this.concurrency >= this.maxConcurrency) {
@@ -516,13 +562,19 @@
 	var methods = {
 	  click() {
 	    const { random } = this.get();
-	    random.perform();
+
+	    const subscribe = ((changed, { value }) => {
+	      if (changed.value) {
+	        this.set({ result: value });
+	      }
+	    });
+
+	    const rand = random.perform(subscribe);
 	    this.set({ performCount: random.performCount });
 	  }
 	};
 
 	function oncreate() {
-	  const ctx = this;
 	  const random = task(function *() {
 	    let nums = [];
 
@@ -530,8 +582,9 @@
 	      nums.push(Math.floor(Math.random() * 10));
 	    }
 
-	    ctx.set({ result: nums.join(', ') });
+	    return nums.join(', ');
 	  });
+
 	  this.set({ random, performCount: random.performCount });
 	}
 	function create_main_fragment(component, ctx) {
@@ -645,9 +698,7 @@
 	  click(err) {
 	    const { nameTask } = this.get();
 	    this.set({ throwError: err });
-	    const getRandomName = nameTask.perform();
-
-	    const unsubscribeTask = getRandomName.subscribe((changed, { state, value }) => {
+	    const subscribe = (changed, { state, value }) => {
 	        /*
 	         * TODO: slightly annoying to push this onto
 	         * the user. think of a better way
@@ -661,12 +712,15 @@
 	        }
 
 	        if (changed.value) {
-	          console.log(value);
+	          this.set({ name: value });
 	        }
+	    };
+
+	    const getRandomName = nameTask.perform(subscribe);
+
+	    this.set({
+	      performCount: nameTask.performCount
 	    });
-
-
-	    this.set({ performCount: nameTask.performCount });
 	  }
 	};
 
@@ -684,7 +738,7 @@
 	      const resp = yield fetch('http://faker.hook.io/?property=name.findName&locale=en');
 	      const name = yield resp.text();
 
-	      ctx.set({ name });
+	      return name;
 	    }
 	  });
 
@@ -1046,9 +1100,8 @@
 	    const { random, performCount } = this.get();
 	    const color = (performCount & 1) ? 'green' : 'blue';
 	    this.set({ color });
-	    const instance = random.perform();
 
-	    instance.subscribe((changed, { state, value }) => {
+	    const subscribe = (changed, { state, value }) => {
 	      const { states } = this.get();
 
 	      if (changed.value) {
@@ -1058,7 +1111,9 @@
 	      if (state === 'dropped' || state === 'running') {
 	        this.set({ states: states.concat([{ value: state, color }]) });
 	      }
-	    });
+	    };
+
+	    const instance = random.perform(subscribe);
 
 	    this.set({
 	      performCount: random.performCount,
@@ -1071,22 +1126,22 @@
 	  const ctx = this;
 	  const random = task(function *() {
 	    try {
-	    let nums = [];
+	      let nums = [];
 
-	    for (let i = 0; i < 3; i++) {
-	      nums.push(Math.floor(Math.random() * 10));
-	    }
+	      for (let i = 0; i < 3; i++) {
+	        nums.push(Math.floor(Math.random() * 10));
+	      }
 
-	    // Fake waiting
-	    yield new Promise((resolve) => {
-	      setTimeout(resolve, 2000);
-	    });
+	      // Fake waiting
+	      yield new Promise((resolve) => {
+	        setTimeout(resolve, 2000);
+	      });
 
-	    ctx.set({
-	      result: nums.join(', ')
-	    });
+	      ctx.set({
+	        result: nums.join(', ')
+	      });
 
-	    return nums.join(', ');
+	      return nums.join(', ');
 	    } catch (e) {
 	      console.log(e);
 	    }
@@ -1407,10 +1462,7 @@
 
 	  click() {
 	    const { random, performCount } = this.get();
-	    const instance = random.perform();
-	    this.set({ instance });
-
-	    instance.subscribe((changed, { state, value }) => {
+	    const subscribe = (changed, { state, value }) => {
 	      const { states } = this.get();
 
 	      if (changed.state) {
@@ -1432,9 +1484,11 @@
 	          return this.set({ states: states.concat([{ value: state, color: 'green' }]) });
 	        }
 	      }
+	    };
 
+	    const instance = random.perform(subscribe);
+	    this.set({ instance });
 
-	    });
 
 	    this.set({
 	      performCount: random.performCount
@@ -1453,9 +1507,7 @@
 	      }
 
 	      // Fake waiting
-	      yield new Promise((resolve) => {
-	        setTimeout(resolve, 2000);
-	      });
+	      yield timeout(2000);
 
 	      ctx.set({
 	        result: nums.join(', ')

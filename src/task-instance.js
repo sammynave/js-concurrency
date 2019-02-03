@@ -1,3 +1,6 @@
+import { defer } from './defer';
+import { timeout } from './timeout';
+
 const RUNNING  = 'running';
 const WAITING  = 'waiting';
 const FINISHED = 'finished';
@@ -15,38 +18,40 @@ class TaskInstance {
     this._hasStarted = true;
     this._isCanceling = false;
     this._cancelReason = null;
+    this.itrResult = null;
+    this.itr = genFn();
 
-    const itr = genFn();
+    this.run = (res) => {
+      /*
+       * `result` { value: Promise | T, value: bool }
+       */
+      this.itrResult = this.itr.next(res);
 
-    /*
-     * TODO: might not want to use recursion
-     * benchmark this at some point
-     */
-    const run = (result) => {
-      if (result.done) {
+
+      if (this.itrResult.done) {
+        this.value = this.itrResult.value;
         this.isSuccessful = true;
-        this.value = result.value;
-        return Promise.resolve(result.value);
+        return Promise.resolve(this.itrResult.value);
       }
 
-      return Promise.resolve(result.value)
-        .then(
-          (res) => {
-            if (this.value instanceof Error) {
-              this._isFinished = true;
-              return itr.throw(this);
-            };
+      this.deferred = defer();
+      this.deferred.promise.then(
+        (res) => {
+          if (this.isCanceled) { return; };
 
-            return run(itr.next(res))
-          },
-          (err) => {
-            this.error = err;
-            return itr.throw(this);
-          }
-        );
+          return this.run(res);
+        },
+
+        (err) => {
+          this.error = err;
+          return this.itr.throw(this);
+        }
+      );
+
+      this.deferred.resolve(this.itrResult.value);
+
+      return this.deferred;
     }
-
-    run(itr.next());
 
     return this;
   }
@@ -54,14 +59,16 @@ class TaskInstance {
   emitChange(changedKeys) {
     const changed = {};
     changedKeys.forEach(c => changed[c] = 1);
-    this._subscribers.forEach(s => s(changed, this));
+    this._subscribers.forEach(s => {
+      s(changed, this)
+    });
   }
 
   cancel(cancelReason = 'TODO add a reason for cancellation') {
     if (this.isCanceling || this.isFinished) { return; }
 
     /*
-     * Batch changes
+     * Batch changes by using _<prop>
      */
 
     if (cancelReason === DROPPED) {
@@ -74,8 +81,18 @@ class TaskInstance {
      * TODO: get actual reasons
      */
     this._cancelReason = cancelReason;
+    this._isFinished = true;
+    this._value = Error(this.cancelReason);
 
-    this._value = new Error(this.cancelReason);
+    /*
+     * If this is cancel aware promise (e.g. `timeout`), then
+     * cancel and clean that up
+     */
+    if (typeof this.itrResult.value.cancel === 'function') {
+      this.itrResult.value.cancel();
+    }
+
+    this.deferred.reject(this.itr.throw(this));
     this.emitChange(['state', 'value', 'cancelReason']);
   }
 
@@ -144,7 +161,7 @@ class TaskInstance {
   set isSuccessful(tf) {
     this._isSuccessful = tf;
     this._isFinished = true;
-    this.emitChange(['state']);
+    this.emitChange(['state', 'value']);
   }
 
 
@@ -183,6 +200,10 @@ class TaskInstance {
 
     this._isDropped = tf;
     this.emitChange(['state']);
+  }
+
+  get isRunning() {
+    return !this.isFinished;
   }
 
   get isCanceled() {

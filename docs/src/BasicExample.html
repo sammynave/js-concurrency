@@ -15,7 +15,14 @@
     methods: {
       click() {
         const { random } = this.get();
-        random.perform();
+
+        const subscribe = ((changed, { value }) => {
+          if (changed.value) {
+            this.set({ result: value });
+          }
+        });
+
+        const rand = random.perform(subscribe);
         this.set({ performCount: random.performCount });
       }
     },
@@ -29,8 +36,9 @@
           nums.push(Math.floor(Math.random() * 10));
         }
 
-        ctx.set({ result: nums.join(', ') });
+        return nums.join(', ');
       });
+
       this.set({ random, performCount: random.performCount });
     }
   }
