@@ -1,7 +1,7 @@
 {
   "name": "js-concurrency",
   "repository": "https://github.com/sammynave/js-concurrency",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "general concurrency primitives inspired by (stolen from) ember-concurrency",
   "main": "dist/js-concurrency.es.js",
   "module": "dist/js-concurrency.es.js",
