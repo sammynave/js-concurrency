@@ -36,15 +36,6 @@ const defaultPlugins = [
   filesizePlugin
 ];
 
-const cjs = {
-  input: "src/index.js",
-  output: {
-    file: pkg.module,
-    format: "cjs"
-  },
-  plugins: defaultPlugins
-};
-
 const es = {
   input: "src/index.js",
   output: {
@@ -83,6 +74,6 @@ const docs = {
   ]
 };
 
-const exports = isDev ? [docs] : [es, iife, cjs, docs];
+const exports = isDev ? [docs] : [es, iife, docs];
 
 export default exports;
