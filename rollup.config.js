@@ -5,6 +5,8 @@ import commonjs from 'rollup-plugin-commonjs';
 import serve from 'rollup-plugin-serve'
 import { terser } from "rollup-plugin-terser";
 import svelte from 'rollup-plugin-svelte';
+import typescript from 'rollup-plugin-typescript2';
+import tslint from "rollup-plugin-tslint";
 
 const isDev = process.env.BUILD === 'dev';
 const commonjsPlugin = commonjs();
@@ -29,7 +31,13 @@ const sveltePlugin = svelte({
   }
 });
 
+const typescriptPlugin = typescript({
+  
+});
+
 const defaultPlugins = [
+  tslint({}),
+  typescriptPlugin,
   resolvePlugin,
   commonjsPlugin,
   terser(),
@@ -37,22 +45,11 @@ const defaultPlugins = [
 ];
 
 const es = {
-  input: "src/index.js",
+  input: "src/index.ts",
   output: {
     file: pkg.module,
     format: "es",
     sourcemap: true
-  },
-  plugins: defaultPlugins
-};
-
-const iife = {
-  input: "src/index.js",
-  output: {
-    file: pkg.browser,
-    format: "iife",
-    sourcemap: true,
-    name: 'jsc'
   },
   plugins: defaultPlugins
 };
@@ -66,6 +63,7 @@ const docs = {
     name: 'jsc'
   },
   plugins: [
+    typescriptPlugin,
     sveltePlugin,
     resolvePlugin,
     commonjsPlugin,
@@ -74,6 +72,6 @@ const docs = {
   ]
 };
 
-const exports = isDev ? [docs] : [es, iife, docs];
+const exports = isDev ? [docs] : [es, docs];
 
 export default exports;

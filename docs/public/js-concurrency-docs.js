@@ -198,363 +198,450 @@
 		_differs
 	};
 
-	function defer(label) {
-	  let deferred = { resolve: undefined, reject: undefined };
-
-	  deferred.promise = new Promise((resolve, reject) => {
-	    deferred.resolve = resolve;
-	    deferred.reject = reject;
-	  }, label);
-
-	  return deferred;
+	// tslint:disable
+	// @ts-ignore
+	function defer() {
+	    var deferred = { resolve: undefined, reject: undefined };
+	    // @ts-ignore
+	    deferred.promise = new Promise(function (resolve, reject) {
+	        // @ts-ignore
+	        deferred.resolve = resolve;
+	        // @ts-ignore
+	        deferred.reject = reject;
+	    });
+	    return deferred;
 	}
+	// tslint:enable
 
-	const timeout = (ms) => {
-	  let timerId;
-
-	  let promise = new Promise((resolve) => {
-	    timerId = setTimeout(() => {
-	      resolve();
-	    }, ms);
-	  });
-
-	  promise.cancel = () => {
-	    clearTimeout(timerId);
-	  };
-
-	  return promise;
-	};
-
-	const RUNNING  = 'running';
-	const WAITING  = 'waiting';
-	const FINISHED = 'finished';
-	const CANCELED = 'canceled';
-	const DROPPED  = 'dropped';
-
-	class TaskInstance {
-	  constructor(genFn) {
-	    this._subscribers = [];
-	    this._state = RUNNING;
-	    this._isSuccessful = null;
-	    this._value = null;
-	    this._hasStarted = true;
-	    this._isCanceling = false;
-	    this._cancelReason = null;
-	    this.itrResult = null;
-	    this.itr = genFn();
-
-	    this.run = (res) => {
-	      /*
-	       * `result` { value: Promise | T, value: bool }
-	       */
-	      this.itrResult = this.itr.next(res);
-
-
-	      if (this.itrResult.done) {
-	        this.value = this.itrResult.value;
-	        this.isSuccessful = true;
-	        return Promise.resolve(this.itrResult.value);
-	      }
-
-	      this.deferred = defer();
-	      this.deferred.promise.then(
-	        (res) => {
-	          if (this.isCanceled) { return; }
-	          return this.run(res);
+	// tslint:disable
+	var RUNNING = 'running';
+	var WAITING = 'waiting';
+	var FINISHED = 'finished';
+	var CANCELED = 'canceled';
+	var DROPPED = 'dropped';
+	var TaskInstance = /** @class */ (function () {
+	    // @ts-ignore
+	    function TaskInstance(genFn) {
+	        var _this = this;
+	        // @ts-ignore
+	        this._subscribers = [];
+	        // @ts-ignore
+	        this._state = RUNNING;
+	        // @ts-ignore
+	        this._isSuccessful = null;
+	        // @ts-ignore
+	        this._value = null;
+	        // @ts-ignore
+	        this._hasStarted = true;
+	        // @ts-ignore
+	        this._isCanceling = false;
+	        // @ts-ignore
+	        this._cancelReason = null;
+	        // @ts-ignore
+	        this.itrResult = null;
+	        // @ts-ignore
+	        this.itr = genFn();
+	        // @ts-ignore
+	        this.run = function (res) {
+	            /*
+	             * `result` { value: Promise | T, value: bool }
+	             */
+	            // @ts-ignore
+	            _this.itrResult = _this.itr.next(res);
+	            // @ts-ignore
+	            if (_this.itrResult.done) {
+	                // @ts-ignore
+	                _this.value = _this.itrResult.value;
+	                _this.isSuccessful = true;
+	                // @ts-ignore
+	                return Promise.resolve(_this.itrResult.value);
+	            }
+	            // @ts-ignore
+	            _this.deferred = defer();
+	            // @ts-ignore
+	            _this.deferred.promise.then(
+	            // @ts-ignore
+	            function (res) {
+	                if (_this.isCanceled) {
+	                    return;
+	                }
+	                // @ts-ignore
+	                return _this.run(res);
+	            }, 
+	            // @ts-ignore
+	            function (err) {
+	                _this.error = err;
+	                // @ts-ignore
+	                return _this.itr.throw(_this);
+	            });
+	            // @ts-ignore
+	            _this.deferred.resolve(_this.itrResult.value);
+	            // @ts-ignore
+	            return _this.deferred;
+	        };
+	        return this;
+	    }
+	    // @ts-ignore
+	    TaskInstance.prototype.emitChange = function (changedKeys) {
+	        var _this = this;
+	        var changed = {};
+	        // @ts-ignore
+	        changedKeys.forEach(function (c) { return changed[c] = 1; });
+	        // @ts-ignore
+	        this._subscribers.forEach(function (s) {
+	            s(changed, _this);
+	        });
+	    };
+	    TaskInstance.prototype.cancel = function (cancelReason) {
+	        if (cancelReason === void 0) { cancelReason = 'TODO add a reason for cancellation'; }
+	        if (this.isCanceling || this.isFinished) {
+	            return;
+	        }
+	        /*
+	         * Batch changes by using _<prop>
+	         */
+	        if (cancelReason === DROPPED) {
+	            // @ts-ignore
+	            this._isDropped = true;
+	        }
+	        // @ts-ignore
+	        this._isCanceling = true;
+	        /*
+	         * TODO: get actual reasons
+	         */
+	        // @ts-ignore
+	        this._cancelReason = cancelReason;
+	        // @ts-ignore
+	        this._isFinished = true;
+	        // @ts-ignore
+	        this._value = Error(this.cancelReason);
+	        /*
+	         * If this is cancel aware promise (e.g. `timeout`), then
+	         * cancel and clean that up
+	         */
+	        // @ts-ignore
+	        if (typeof this.itrResult.value.cancel === 'function') {
+	            // @ts-ignore
+	            this.itrResult.value.cancel();
+	        }
+	        // @ts-ignore
+	        this.deferred.reject(this.itr.throw(this));
+	        this.emitChange(['state', 'value', 'cancelReason']);
+	    };
+	    // @ts-ignore
+	    TaskInstance.prototype.subscribe = function (subscriber) {
+	        // @ts-ignore
+	        this._subscribers.push(subscriber);
+	        subscriber({ state: 1 }, this);
+	        var unsubscribe = function () {
+	            // @ts-ignore
+	            var index = subscribers.indexOf(subscriber);
+	            if (index !== -1) {
+	                // @ts-ignore
+	                subscribers.splice(index, 1);
+	            }
+	            /*
+	             * if we ever need any unsubscribe cleanup,
+	             * do it here here.
+	             */
+	        };
+	        return unsubscribe;
+	    };
+	    Object.defineProperty(TaskInstance.prototype, "error", {
+	        get: function () {
+	            // @ts-ignore
+	            return this._error;
 	        },
-
-	        (err) => {
-	          this.error = err;
-	          return this.itr.throw(this);
-	        }
-	      );
-
-	      this.deferred.resolve(this.itrResult.value);
-
-	      return this.deferred;
-	    };
-
-	    return this;
-	  }
-
-	  emitChange(changedKeys) {
-	    const changed = {};
-	    changedKeys.forEach(c => changed[c] = 1);
-	    this._subscribers.forEach(s => {
-	      s(changed, this);
+	        set: function (e) {
+	            // @ts-ignore
+	            this._isSuccessful = false;
+	            // @ts-ignore
+	            this._isFinished = true;
+	            // @ts-ignore
+	            this._error = e;
+	            this.emitChange(['state', 'error']);
+	        },
+	        enumerable: true,
+	        configurable: true
 	    });
-	  }
-
-	  cancel(cancelReason = 'TODO add a reason for cancellation') {
-	    if (this.isCanceling || this.isFinished) { return; }
-
-	    /*
-	     * Batch changes by using _<prop>
-	     */
-
-	    if (cancelReason === DROPPED) {
-	      this._isDropped = true;
-	    }
-
-	    this._isCanceling = true;
-
-	    /*
-	     * TODO: get actual reasons
-	     */
-	    this._cancelReason = cancelReason;
-	    this._isFinished = true;
-	    this._value = Error(this.cancelReason);
-
-	    /*
-	     * If this is cancel aware promise (e.g. `timeout`), then
-	     * cancel and clean that up
-	     */
-	    if (typeof this.itrResult.value.cancel === 'function') {
-	      this.itrResult.value.cancel();
-	    }
-
-	    this.deferred.reject(this.itr.throw(this));
-	    this.emitChange(['state', 'value', 'cancelReason']);
-	  }
-
-	  subscribe(subscriber) {
-	    this._subscribers.push(subscriber);
-	    subscriber({ state: 1 }, this);
-
-	    const unsubscribe = function() {
-	      const index = subscribers.indexOf(subscriber);
-
-	      if (index !== -1) {
-	        subscribers.splice(index, 1);
-	      }
-
-	      /*
-	       * if we ever need any unsubscribe cleanup,
-	       * do it here here.
-	       */
-	    };
-
-	    return unsubscribe;
-	  }
-
-	  get error() {
-	    return this._error;
-	  }
-
-	  set error(e) {
-	    this._isSuccessful = false;
-	    this._isFinished = true;
-	    this._error = e;
-	    this.emitChange(['state', 'error']);
-	  }
-
-	  /*
-	   * TODO:
-	   * probably want this to be a state machine and make sure
-	   * these are mutually exclusive.
-	   * microstates (https://github.com/microstates/microstates.js)
-	   * would be nice for this lib but it would quintuple the size
-	   */
-	  get state() {
-	    if (this.isDropped) {
-	      return DROPPED;
-	    } else if (this.isCanceling) {
-	      return CANCELED;
-	    } else if (this.isFinished) {
-	      return FINISHED;
-	    } else if (this.hasStarted) {
-	      return RUNNING;
-	    } else {
-	      return WAITING;
-	    }
-	  }
-
-
-	  get isFinished() {
-	    return this._isFinished;
-	  }
-
-
-	  get isSuccessful() {
-	    return this._isSuccessful;
-	  }
-
-	  set isSuccessful(tf) {
-	    this._isSuccessful = tf;
-	    this._isFinished = true;
-	    this.emitChange(['state', 'value']);
-	  }
-
-
-	  get hasStarted() {
-	    return this._hasStarted;
-	  }
-
-	  set hasStarted(tf) {
-	    if (this._hasStarted === tf) {
-	      return;
-	    }
-
-	    this._hasStarted = tf;
-	    this.emitChange(['state']);
-	  }
-
-
-	  get value() {
-	    return this._value;
-	  }
-
-	  set value(v) {
-	    this._value = v;
-	    this.emitChange(['value']);
-	  }
-
-
-	  get isDropped() {
-	    return this._isDropped;
-	  }
-
-	  set isDropped(tf) {
-	    if (this._isDropped === tf) {
-	      return;
-	    }
-
-	    this._isDropped = tf;
-	    this.emitChange(['state']);
-	  }
-
-	  get isRunning() {
-	    return !this.isFinished;
-	  }
-
-	  get isCanceled() {
-	    return this.isCanceling && this.isFinished;
-	  }
-
-	  get isCanceling() {
-	    return this._isCanceling;
-	  }
-
-	  set isCanceling(tf) {
-	    this._isCanceling = tf;
-	    this.emitChange(['state']);
-	  }
-
-
-	  get cancelReason() {
-	    return this._cancelReason;
-	  }
-	}
-
-	const IDLE    = 'idle';
-	const RUNNING$1 = 'running';
-	const QUEUED  = 'queued';
-
-	class Task {
-	  constructor(genFn, {
-	    drop = true,
-	    maxConcurrency = 1 } = {}) {
-
-	    this.genFn = genFn;
-	    this.subscribers = [];
-	    this.taskInstances = new Set([]);
-
-	    // this can be a funciton of taskInstances now
-	    this.concurrency = 0;
-
-	    this.performCount = 0;
-	    this.droppedCount = 0;
-	    this.state = IDLE;
-	    this.drop = drop;
-	    this.maxConcurrency = maxConcurrency;
-	  }
-
-
-	  subscribe(subscriber) {
-	    this.subscribers.push(subscriber);
-	    subscriber({ state: 1 }, this);
-
-	    const unsubscribe = function() {
-	      const index = this.subscribers.indexOf(subscriber);
-
-	      if (index !== -1) {
-	        this.subscribers.splice(index, 1);
-	      }
-
-	      /*
-	       * if we ever need any unsubscribe cleanup,
-	       * do it here here.
-	       */
-	    };
-
-	    return unsubscribe;
-	  }
-
-
-	  cancelAll() {
-	    this.taskInstances.forEach((ti) => {
-	      ti.cancel('cancelAll was called');
-	      this.taskInstances.delete(ti);
+	    Object.defineProperty(TaskInstance.prototype, "state", {
+	        /*
+	         * TODO:
+	         * probably want this to be a state machine and make sure
+	         * these are mutually exclusive.
+	         * microstates (https://github.com/microstates/microstates.js)
+	         * would be nice for this lib but it would quintuple the size
+	         */
+	        get: function () {
+	            if (this.isDropped) {
+	                return DROPPED;
+	            }
+	            else if (this.isCanceling) {
+	                return CANCELED;
+	            }
+	            else if (this.isFinished) {
+	                return FINISHED;
+	            }
+	            else if (this.hasStarted) {
+	                return RUNNING;
+	            }
+	            else {
+	                return WAITING;
+	            }
+	        },
+	        enumerable: true,
+	        configurable: true
 	    });
-	  }
+	    Object.defineProperty(TaskInstance.prototype, "isFinished", {
+	        get: function () {
+	            // @ts-ignore
+	            return this._isFinished;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(TaskInstance.prototype, "isSuccessful", {
+	        get: function () {
+	            // @ts-ignore
+	            return this._isSuccessful;
+	        },
+	        set: function (tf) {
+	            // @ts-ignore
+	            this._isSuccessful = tf;
+	            // @ts-ignore
+	            this._isFinished = true;
+	            this.emitChange(['state', 'value']);
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(TaskInstance.prototype, "hasStarted", {
+	        get: function () {
+	            // @ts-ignore
+	            return this._hasStarted;
+	        },
+	        set: function (tf) {
+	            // @ts-ignore
+	            if (this._hasStarted === tf) {
+	                return;
+	            }
+	            // @ts-ignore
+	            this._hasStarted = tf;
+	            this.emitChange(['state']);
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(TaskInstance.prototype, "value", {
+	        get: function () {
+	            // @ts-ignore
+	            return this._value;
+	        },
+	        set: function (v) {
+	            // @ts-ignore
+	            this._value = v;
+	            this.emitChange(['value']);
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(TaskInstance.prototype, "isDropped", {
+	        get: function () {
+	            // @ts-ignore
+	            return this._isDropped;
+	        },
+	        set: function (tf) {
+	            // @ts-ignore
+	            if (this._isDropped === tf) {
+	                return;
+	            }
+	            // @ts-ignore
+	            this._isDropped = tf;
+	            this.emitChange(['state']);
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(TaskInstance.prototype, "isRunning", {
+	        get: function () {
+	            return !this.isFinished;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(TaskInstance.prototype, "isCanceled", {
+	        get: function () {
+	            return this.isCanceling && this.isFinished;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(TaskInstance.prototype, "isCanceling", {
+	        get: function () {
+	            // @ts-ignore
+	            return this._isCanceling;
+	        },
+	        set: function (tf) {
+	            // @ts-ignore
+	            this._isCanceling = tf;
+	            this.emitChange(['state']);
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(TaskInstance.prototype, "cancelReason", {
+	        get: function () {
+	            // @ts-ignore
+	            return this._cancelReason;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    return TaskInstance;
+	}());
+	// tslint:enable
 
-	  perform(subscribe) {
-	    const taskInstance = new TaskInstance(this.genFn);  taskInstance.subscribe(subscribe);
-	    taskInstance.run();
-	    this.taskInstances.add(taskInstance);
-
-	    if (this.concurrency >= this.maxConcurrency) {
-	      taskInstance.cancel('dropped');
-	    } else {
-	      this.performCount++;
-	      this.concurrency++;
-	    }
-
-
-
-
-	    /*
-	     * TODO: need to check if ANY instance `state`
-	     * is `running` or `queued`, not just the
-	     * most recent one
-	     */
-	    taskInstance.subscribe((changed, { state: tiState, cancelled }) => {
-	      if (changed.state) {
+	// tslint:disable
+	var IDLE = 'idle';
+	var RUNNING$1 = 'running';
+	var QUEUED = 'queued';
+	var Task = /** @class */ (function () {
+	    // @ts-ignore
+	    function Task(genFn, _a) {
+	        var _b = _a === void 0 ? {} : _a, _c = _b.drop, drop = _c === void 0 ? true : _c, _d = _b.maxConcurrency, maxConcurrency = _d === void 0 ? 1 : _d;
+	        // @ts-ignore
+	        this.genFn = genFn;
+	        // @ts-ignore
+	        this.subscribers = [];
+	        // @ts-ignore
+	        this.taskInstances = new Set([]);
+	        // this can be a funciton of taskInstances now
+	        // @ts-ignore
+	        this.concurrency = 0;
+	        // @ts-ignore
+	        this.performCount = 0;
+	        // @ts-ignore
+	        this.droppedCount = 0;
+	        // @ts-ignore
 	        this.state = IDLE;
-
-	        if (tiState === 'running') {
-	          this.state = RUNNING$1;
+	        // @ts-ignore
+	        this.drop = drop;
+	        // @ts-ignore
+	        this.maxConcurrency = maxConcurrency;
+	    }
+	    // @ts-ignore
+	    Task.prototype.subscribe = function (subscriber) {
+	        // @ts-ignore
+	        this.subscribers.push(subscriber);
+	        subscriber({ state: 1 }, this);
+	        var unsubscribe = function () {
+	            // @ts-ignore
+	            var index = this.subscribers.indexOf(subscriber);
+	            if (index !== -1) {
+	                // @ts-ignore
+	                this.subscribers.splice(index, 1);
+	            }
+	            /*
+	             * if we ever need any unsubscribe cleanup,
+	             * do it here here.
+	             */
+	        };
+	        return unsubscribe;
+	    };
+	    Task.prototype.cancelAll = function () {
+	        var _this = this;
+	        // @ts-ignore
+	        this.taskInstances.forEach(function (ti) {
+	            ti.cancel('cancelAll was called');
+	            // @ts-ignore
+	            _this.taskInstances.delete(ti);
+	        });
+	    };
+	    // @ts-ignore
+	    Task.prototype.perform = function (subscribe) {
+	        var _this = this;
+	        // @ts-ignore
+	        var taskInstance = new TaskInstance(this.genFn);
+	        taskInstance.subscribe(subscribe);
+	        // @ts-ignore
+	        taskInstance.run();
+	        // @ts-ignore
+	        this.taskInstances.add(taskInstance);
+	        // @ts-ignore
+	        if (this.concurrency >= this.maxConcurrency) {
+	            taskInstance.cancel('dropped');
 	        }
-
-	        if (tiState === 'queued') {
-	          this.state = QUEUED;
+	        else {
+	            // @ts-ignore
+	            this.performCount++;
+	            // @ts-ignore
+	            this.concurrency++;
 	        }
+	        /*
+	         * TODO: need to check if ANY instance `state`
+	         * is `running` or `queued`, not just the
+	         * most recent one
+	         */
+	        // @ts-ignore
+	        taskInstance.subscribe(function (changed, _a) {
+	            var tiState = _a.state, cancelled = _a.cancelled;
+	            if (changed.state) {
+	                // @ts-ignore
+	                _this.state = IDLE;
+	                if (tiState === 'running') {
+	                    // @ts-ignore
+	                    _this.state = RUNNING$1;
+	                }
+	                if (tiState === 'queued') {
+	                    // @ts-ignore
+	                    _this.state = QUEUED;
+	                }
+	                if (tiState === 'finished') {
+	                    // @ts-ignore
+	                    _this.concurrency--;
+	                    // @ts-ignore
+	                    _this.taskInstances.delete(taskInstance);
+	                }
+	                if (tiState === 'dropped') {
+	                    // @ts-ignore
+	                    _this.droppedCount++;
+	                    // @ts-ignore
+	                    _this.taskInstances.delete(taskInstance);
+	                }
+	                if (tiState === 'canceled') {
+	                    // @ts-ignore
+	                    _this.concurrency--;
+	                    // @ts-ignore
+	                    _this.taskInstances.delete(taskInstance);
+	                }
+	                // @ts-ignore
+	                _this.subscribers.forEach(function (s) { return s({ state: 1 }, _this); });
+	            }
+	        });
+	        return taskInstance;
+	    };
+	    return Task;
+	}());
+	// tslint:enable
 
-	        if (tiState === 'finished') {
-	          this.concurrency--;
-	          this.taskInstances.delete(taskInstance);
-	        }
-
-	        if (tiState === 'dropped') {
-	          this.droppedCount++;
-	          this.taskInstances.delete(taskInstance);
-	        }
-
-	        if (tiState === 'canceled') {
-	          this.concurrency--;
-	          this.taskInstances.delete(taskInstance);
-	        }
-
-	        this.subscribers.forEach(s => s({ state: 1 }, this));
-	      }
+	// tslint:disable
+	var timeout = function (ms) {
+	    // @ts-ignore
+	    var timerId;
+	    var promise = new Promise(function (resolve) {
+	        timerId = setTimeout(resolve, ms);
 	    });
+	    // @ts-ignore
+	    promise.cancel = function () {
+	        // @ts-ignore
+	        clearTimeout(timerId);
+	    };
+	    return promise;
+	};
+	/* tslint:enable */
 
-	    return taskInstance;
-	  }
-	}
-
-	const task = (...args) => {
-	  return new Task(...args);
+	var task = function (genFn) {
+	    return new Task(genFn);
 	};
 
 	/* docs/src/BasicExample.html generated by Svelte v2.16.0 */
