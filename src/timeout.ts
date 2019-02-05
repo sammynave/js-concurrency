@@ -1,18 +1,16 @@
-// tslint:disable
-export const timeout = (ms: number) => {
-  // @ts-ignore
-  let timerId;
+import { CancelablePromise, Resolve } from './types';
 
-  let promise = new Promise((resolve) => {
-    timerId = setTimeout(resolve, ms);
-  });
+export const timeout = (ms: number): CancelablePromise => {
+  let timerId: number;
 
-  // @ts-ignore
+  const promise = new Promise((resolve: Resolve) => {
+    timerId = window.setTimeout(resolve, ms);
+    return timerId;
+  }) as CancelablePromise;
+
   promise.cancel = () => {
-    // @ts-ignore
     clearTimeout(timerId);
   };
 
   return promise;
-}
-/* tslint:enable */
+};

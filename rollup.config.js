@@ -31,9 +31,7 @@ const sveltePlugin = svelte({
   }
 });
 
-const typescriptPlugin = typescript({
-  
-});
+const typescriptPlugin = typescript({});
 
 const defaultPlugins = [
   tslint({}),
