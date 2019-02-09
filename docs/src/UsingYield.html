@@ -47,23 +47,23 @@
     methods: {
       click(err) {
         const { nameTask } = this.get();
-        this.set({ throwError: err });
+        this.set({ throwError: err, error: undefined });
         const subscribe = (changed, { state, value }) => {
-            /*
-             * TODO: slightly annoying to push this onto
-             * the user. think of a better way
-             */
-            if (changed.state) {
-              const taskInstanceStates = this.get().taskInstanceStates;
-              this.set({
-                taskInstanceState: state,
-                taskInstanceStates: taskInstanceStates.concat([state])
-              });
-            }
+          /*
+           * TODO: slightly annoying to push this onto
+           * the user. think of a better way
+           */
+          if (changed.state) {
+            const taskInstanceStates = this.get().taskInstanceStates;
+            this.set({
+              taskInstanceState: state,
+              taskInstanceStates: taskInstanceStates.concat([state])
+            });
+          }
 
-            if (changed.value) {
-              this.set({ name: value });
-            }
+          if (changed.value) {
+            this.set({ name: value });
+          }
         };
 
         const getRandomName = nameTask.perform(subscribe);
@@ -86,9 +86,9 @@
       const nameTask = task(function *() {
         if (ctx.get().throwError) {
           try {
-            const resp = yield fetch('http://somebadurlthatdoesntexist');
-          } catch (e) {
-            ctx.set({ error: e.error });
+            throw Error('some random error');
+          } catch (error) {
+            ctx.set({ error });
           }
         } else {
 

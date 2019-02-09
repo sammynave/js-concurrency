@@ -1,102 +1,67 @@
-// tslint:disable
-// @ts-ignore
 import { TaskInstance } from './task-instance';
+import { TaskInstanceSubscriber, TaskSubscriber } from './types';
 
-const IDLE    = 'idle';
+const IDLE = 'idle';
 const RUNNING = 'running';
-const QUEUED  = 'queued';
 
 class Task {
-  // @ts-ignore
-  constructor(genFn, {
-    drop = true,
-    maxConcurrency = 1 } = {}) {
+  public genFn: Generator;
+  public subscribers: TaskSubscriber[];
+  public taskInstances: Set<TaskInstance>;
+  public concurrency: number;
+  public performCount: number;
+  public droppedCount: number;
+  public maxConcurrency: number;
+  public state: 'idle' | 'running' | 'queued';
+  public drop: boolean;
 
-    // @ts-ignore
+  constructor(genFn: Generator, { drop = true, maxConcurrency = 1 } = {}) {
     this.genFn = genFn;
-
-    // @ts-ignore
     this.subscribers = [];
-
-    // @ts-ignore
     this.taskInstances = new Set([]);
-
-    // this can be a funciton of taskInstances now
-    // @ts-ignore
+    // this can be a function of taskInstances now
     this.concurrency = 0;
-
-    // @ts-ignore
     this.performCount = 0;
-
-    // @ts-ignore
     this.droppedCount = 0;
-
-    // @ts-ignore
     this.state = IDLE;
-
-    // @ts-ignore
     this.drop = drop;
-
-    // @ts-ignore
     this.maxConcurrency = maxConcurrency;
   }
 
-
-  // @ts-ignore
-  subscribe(subscriber) {
-    // @ts-ignore
+  public subscribe(subscriber: TaskSubscriber) {
     this.subscribers.push(subscriber);
+
     subscriber({ state: 1 }, this);
 
-    const unsubscribe = function() {
-      // @ts-ignore
+    const unsubscribe = () => {
       const index = this.subscribers.indexOf(subscriber);
-
       if (index !== -1) {
-        // @ts-ignore
         this.subscribers.splice(index, 1);
       }
-
-      /*
-       * if we ever need any unsubscribe cleanup,
-       * do it here here.
-       */
     };
 
     return unsubscribe;
   }
 
-
-  cancelAll() {
-    // @ts-ignore
-    this.taskInstances.forEach((ti) => {
-      ti.cancel('cancelAll was called')
-      // @ts-ignore
+  public cancelAll() {
+    this.taskInstances.forEach(ti => {
+      ti.cancel('cancelAll was called');
       this.taskInstances.delete(ti);
     });
   }
 
-  // @ts-ignore
-  perform(subscribe) {
-    // @ts-ignore
-    const taskInstance = new TaskInstance(this.genFn);  taskInstance.subscribe(subscribe);
-    // @ts-ignore
+  public perform(subscribe: TaskInstanceSubscriber) {
+    const taskInstance = new TaskInstance(this.genFn);
+    taskInstance.subscribe(subscribe);
     taskInstance.run();
-    // @ts-ignore
     this.taskInstances.add(taskInstance);
 
-    // @ts-ignore
     if (this.concurrency >= this.maxConcurrency) {
       taskInstance.cancel('dropped');
     } else {
-      // @ts-ignore
       this.performCount++;
-      // @ts-ignore
       this.concurrency++;
     }
-
-
-
 
     /*
      * TODO: need to check if ANY instance `state`
@@ -106,41 +71,32 @@ class Task {
     // @ts-ignore
     taskInstance.subscribe((changed, { state: tiState, cancelled }) => {
       if (changed.state) {
-        // @ts-ignore
         this.state = IDLE;
 
         if (tiState === 'running') {
-          // @ts-ignore
           this.state = RUNNING;
         }
 
-        if (tiState === 'queued') {
-          // @ts-ignore
-          this.state = QUEUED;
-        }
+        // TODO
+        // if (tiState === 'queued') {
+        //   this.state = QUEUED;
+        // }
 
         if (tiState === 'finished') {
-          // @ts-ignore
           this.concurrency--;
-          // @ts-ignore
           this.taskInstances.delete(taskInstance);
         }
 
         if (tiState === 'dropped') {
-          // @ts-ignore
           this.droppedCount++;
-          // @ts-ignore
           this.taskInstances.delete(taskInstance);
         }
 
         if (tiState === 'canceled') {
-          // @ts-ignore
           this.concurrency--;
-          // @ts-ignore
           this.taskInstances.delete(taskInstance);
         }
 
-        // @ts-ignore
         this.subscribers.forEach(s => s({ state: 1 }, this));
       }
     });
@@ -149,7 +105,4 @@ class Task {
   }
 }
 
-export {
-  Task
-}
-// tslint:enable
+export { Task };

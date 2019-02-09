@@ -1,16 +1,12 @@
-// tslint:disable
-// @ts-ignore
-export function defer() {
-  let deferred = { resolve: undefined, reject: undefined };
+import { Deferred, Reject, Resolve } from './types';
 
-  // @ts-ignore
-  deferred.promise = new Promise((resolve, reject) => {
-    // @ts-ignore
+export function defer(): Deferred {
+  const deferred: any = {};
+
+  deferred.promise = new Promise((resolve: Resolve, reject: Reject) => {
     deferred.resolve = resolve;
-    // @ts-ignore
     deferred.reject = reject;
   });
 
   return deferred;
 }
-// tslint:enable
