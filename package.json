@@ -22,7 +22,7 @@
     "rollup-plugin-terser": "^4.0.3",
     "rollup-plugin-tslint": "^0.2.2",
     "rollup-plugin-typescript2": "^0.19.2",
-    "svelte": "^2.16.0",
+    "svelte": "^3.14.1",
     "trash-cli": "^1.4.0",
     "tslint": "^5.12.1",
     "tslint-config-prettier": "^1.17.0",
