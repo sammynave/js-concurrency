@@ -2136,10 +2136,10 @@ supports-color@^6.1.0:
   dependencies:
     has-flag "^3.0.0"
 
-svelte@^2.16.0:
-  version "2.16.0"
-  resolved "https://registry.yarnpkg.com/svelte/-/svelte-2.16.0.tgz#a9a10fc4103ecb19d01090fd447ca07e3022af7c"
-  integrity sha512-1x1zCZpNnuwQdH+9tTeM0QYv33TVEFIxrrd88Mv80EcaomIlA9IvFLIThc8OFsCMHwrjllbIRNmsVfwlOxI7MA==
+svelte@^3.18.0:
+  version "3.18.0"
+  resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.18.0.tgz#39dc8314e3b0f660b945fe0e23abf65bba20a0ef"
+  integrity sha512-p3V6wcxkkKbWhCwty1tZ8nh9zXNKg/fUWwdzzh38ERUDnhCodiLzIFcp8LVSBPXy1JS4qfAZfjjujobHGt6AWQ==
 
 tar-fs@^1.13.0:
   version "1.16.3"
