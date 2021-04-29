@@ -1,0 +1,21 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: svelte
+    versions:
+    - 3.32.0
+    - 3.32.1
+    - 3.32.2
+    - 3.32.3
+    - 3.34.0
+    - 3.35.0
+    - 3.36.0
+  - dependency-name: typescript
+    versions:
+    - 3.9.7
+    - 3.9.8
